@@ -1,0 +1,256 @@
+---
+title: "Heart Disease - A Primary Study"
+author: "Oindrila Sen"
+date: "Feb - 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Using the 14 attributes from the Cleveland Hospital Heart Disease Database, let's try to analyze how each of those features is contributing to the disease. 
+Then based on those features, let's build a classifier to determine if a patient is likely to have heart disease or not. 
+
+**The Attributes:**  <br />
+1. age  <br /> 
+2. sex <br />
+3. chest pain type (4 values) <br />
+4. resting blood pressure <br />
+5. serum cholestoral in mg/dl <br />
+6. fasting blood sugar > 120 mg/dl  <br />
+7. resting electrocardiographic results (values 0,1,2)  <br />
+8. maximum heart rate achieved <br />
+9. exercise induced angina <br />
+10. oldpeak = ST depression induced by exercise relative to rest <br />
+11. the slope of the peak exercise ST segment <br />
+12. number of major vessels (0-3) colored by flourosopy <br />
+13. thal: 3 = normal; 6 = fixed defect; 7 = reversable defect  <br />
+14. target (0, 1 )  <br />
+
+## Load Data
+```{r  include=FALSE}
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+######################################
+# 1. Load Data
+######################################
+# Set Working Directory
+setwd("/Users/oindrilasen/WORK_AREA/Data Science/Kaggle/HeartDiseaseUCI")
+# Read train.csv data file
+disease<-read.csv("heart.csv",
+                  header = TRUE
+                  ,na.strings = "",
+                  stringsAsFactors = FALSE
+)
+# Let's take a look at the data
+dim(disease) 
+glimpse(disease) 
+```
+There are 303 records and 14 features. Now, let's explore each of the featues a liitle more and clean the data wherever required.
+
+## Data Cleaning
+
+Let's check first if there are any NULL values for any of the featues.
+```{r }
+# 1. Check for NA values
+na_count <- sort(sapply(disease, function(x) sum(is.na(x))),
+                 decreasing = TRUE)
+na_count
+```
+No, there is no NULL value. The data is already cleaned up.  </br>
+Now, let's check each feature individually.
+```{r}
+# 2. Check the different featutes
+#age
+summary(disease$age)
+```
+In the dataset, age varies from 29 to 77. Well, that's a good range of values. </br>
+The Sex of the person is represented as 1 =Male and 0 = Female. That is a little confusing. Let's convert the data into "M" and "F".
+```{r}
+# sex
+unique(disease$sex)
+#Modify Sex Values to M and F
+disease$sex <- ifelse(disease$sex == 1, "M","F") 
+table(disease$sex)
+```
+
+```{r}
+# cp - chest pain type
+table(disease$cp)
+#trestbps
+summary(disease$trestbps)
+#chol
+summary(disease$chol)
+# fbs = (fasting blood sugar > 120 mg/dl) 1 = true; 0 = false) 
+table(disease$fbs)
+# restecg(resting electrocardiographic results)
+table(disease$restecg)
+#thalach
+summary(disease$thalach)
+#exang
+table(disease$exang)
+#oldpeak
+summary(disease$oldpeak)
+#slope
+table(disease$slope)
+#ca
+summary(disease$ca)
+#thal
+summary(disease$thal)
+#target
+table(disease$target)
+```
+Let's convert the variables with limited set of values to Factors. 
+```{r}
+# 3. Convert to Factors
+disease$target <- as.factor(disease$target)
+disease$sex <- as.factor(disease$sex)
+disease$cp <- as.factor(disease$cp)
+disease$fbs <- as.factor(disease$fbs)
+disease$restecg <- as.factor(disease$restecg)
+disease$exang <- as.factor(disease$exang)
+disease$slope <- as.factor(disease$slope)
+
+glimpse(disease)
+```
+
+## Exploratory Data Analysis
+```{r}
+######################################
+# 3. Exploratory Data Analysis
+######################################
+# Target
+# (1=yes, 0=no)
+ggplot(disease, aes(x = target, fill = target)) +
+  geom_bar()+
+  ggtitle("Heart Disese Affected/Not Affected Count") 
+```
+In our current dataset, we have more records of people who are Affected by the Heart Disease. I guess, that will help us to analyze better.
+```{r}
+# Age
+ggplot(disease, aes(x = target, y = age)) +
+  geom_boxplot(na.rm = TRUE) +
+  ylim(20, 100)+
+  ggtitle("Age vs Disease") 
+```
+As per our general assumption, older people are more prone to a Heart Disease. But our current Dataset tells a different story.
+```{r}
+#Sex
+ggplot(disease, aes(x = sex, fill = target)) +
+  geom_bar(position = "dodge") +
+  ggtitle("Gender vs Disease") 
+```
+The Female population in this dataset are more likely to have a heart disease! 
+```{r message=FALSE}
+# cp
+ggplot(disease, aes(x = cp, fill= target)) +
+  geom_bar(position = "dodge")+
+  ggtitle("Chest Pain Type vs Disease") 
+
+# trestbps
+ggplot(disease, aes(x = trestbps,fill = target)) +
+  geom_histogram(position = "dodge")
+
+# chol
+ggplot(disease, aes(x = chol,fill = target)) +
+  geom_histogram(position = "dodge")
+
+#fbs
+#fasting blood sugar > 120 mg/dl) (1 = true; 0 = false) 
+ggplot(disease, aes(x = fbs, fill= target)) +
+  geom_bar(position = "dodge")
+
+#restecg
+ggplot(disease, aes(x = restecg, fill= target)) +
+  geom_bar(position = "dodge")
+
+#thalach
+ggplot(disease, aes(x = thalach,fill = target)) +
+  geom_histogram(position = "dodge")
+
+# exang
+ggplot(disease, aes(x = exang, fill= target)) +
+  geom_bar(position = "dodge")
+
+#oldpeak
+ggplot(disease, aes(x = oldpeak,fill = target)) +
+  geom_histogram(position = "dodge")+
+  scale_x_continuous(limits = c(0, 6), breaks = seq(0, 6, 0.50)) 
+
+#slope
+ggplot(disease, aes(x = slope, fill= target)) +
+  geom_bar(position = "dodge")
+
+#ca
+ggplot(disease, aes(x = ca, fill= target)) +
+  geom_bar(position = "dodge")
+
+#thal
+ggplot(disease, aes(x = thal, fill= target)) +
+  geom_bar(position = "dodge")
+```
+
+## Create a Simple Model  
+``` {r}
+######################################
+# 4. Data Model
+######################################
+set.seed(150)
+#Sample Indexes
+indexes = sample(1:nrow(disease), size = 0.2 * nrow(disease))
+# Split dataset into training and test set
+test_data = disease[indexes, ]
+train_data = disease[-indexes, ]
+
+dim(train_data)
+dim(test_data)
+
+lg_model <- glm(target ~ ., 
+                data = train_data,
+                family = binomial(link = "logit"))
+
+summary(lg_model)
+```
+The summary shows that some of the features are not contributing to the Model. Let's use only those features which seems important.
+```{r}
+lg_model_rev <- glm(target ~ sex+ cp + ca + thal + exang + oldpeak, 
+                    data = train_data,
+                    family = binomial(link = "logit"))
+summary(lg_model_rev)
+```
+## Prediction and Check Accuracy  of the Model
+```{r}
+######################################
+# 4. Prediction
+######################################
+test_data$predicted_target <- predict(lg_model_rev,
+                                      test_data, 
+                                      type =  "response")
+
+summary(test_data$predicted_target )
+
+test_data$predicted_target  <- round(test_data$predicted_target )
+
+table(test_data$target)
+
+table(test_data$predicted_target)
+
+# Check Accuracy of the Model
+lconfMat <- table(`Actual Class` = test_data$target,`Predicted Class` =test_data$predicted_target) 
+laccuracy <- sum(diag(lconfMat))/sum(lconfMat)
+laccuracy
+
+# Test prediction at a random record
+# Generate a Random Number
+dim(test_data)
+randomNum <- sample(1:60, 1)
+test_data$target[randomNum]
+test_data$predicted_target[randomNum]
+```
+The accuracy of the basic Logistic Regression Model is 85% which is not so bad!
