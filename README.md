@@ -1,2 +1,2 @@
 # Kaggle
-Learn, Practice and Share with Kaggle: https://www.kaggle.com
+Learn and Practice with Kaggle: https://www.kaggle.com
