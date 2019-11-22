@@ -1,2 +1,1 @@
-# Kaggle
-Learn and Practice with Kaggle: https://www.kaggle.com
+### A Collection of my work in R
